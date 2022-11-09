@@ -1,6 +1,8 @@
 package controllers
 
 import (
+	"net/http"
+
 	"github.com/akbarhossainr/go-crud/initializers"
 	"github.com/akbarhossainr/go-crud/models"
 	"github.com/gin-gonic/gin"
@@ -18,12 +20,16 @@ func CreatePosts(c *gin.Context) {
 	result := initializers.DB.Create(&post)
 
 	if result.Error != nil {
-		c.Status(400)
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error":   true,
+			"message": "Something went wrong!",
+		})
 		return
 	}
 
-	c.JSON(200, gin.H{
-		"post": post,
+	c.JSON(http.StatusCreated, gin.H{
+		"error":   false,
+		"message": "Post created successfully!",
 	})
 }
 
@@ -32,14 +38,16 @@ func GetPosts(c *gin.Context) {
 	result := initializers.DB.Find(&posts)
 
 	if result.Error != nil {
-		c.JSON(400, gin.H{
-			"message": "No data found",
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error":   true,
+			"message": "No record found!",
 		})
 		return
 	}
 
-	c.JSON(200, gin.H{
-		"posts": posts,
+	c.JSON(http.StatusOK, gin.H{
+		"error": false,
+		"data":  posts,
 	})
 }
 
@@ -50,14 +58,16 @@ func GetPost(c *gin.Context) {
 	result := initializers.DB.First(&post, id)
 
 	if result.Error != nil {
-		c.JSON(400, gin.H{
-			"message": "No data found",
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error":   true,
+			"message": "No record found!",
 		})
 		return
 	}
 
-	c.JSON(200, gin.H{
-		"post": post,
+	c.JSON(http.StatusOK, gin.H{
+		"error": false,
+		"data":  post,
 	})
 }
 
@@ -77,23 +87,40 @@ func UpdatePost(c *gin.Context) {
 	initializers.DB.First(&post, id)
 
 	// update the post
-	initializers.DB.Model(&post).Updates(models.Post{
+	result := initializers.DB.Model(&post).Updates(models.Post{
 		Title: data.Title,
 		Body:  data.Body,
 	})
 
-	// return the response
-	c.JSON(200, gin.H{
-		"post": post,
+	if result.Error != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error":   true,
+			"message": "Something went wrong!",
+		})
+		return
+	}
+
+	c.JSON(http.StatusAccepted, gin.H{
+		"error":   false,
+		"message": "Post updated successfully!",
 	})
 }
 
 func DeletePost(c *gin.Context) {
 	id := c.Param("id")
 
-	initializers.DB.Delete(&models.Post{}, id)
+	result := initializers.DB.Delete(&models.Post{}, id)
 
-	c.JSON(200, gin.H{
-		"message": "Post deleted successfully",
+	if result.Error != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error":   true,
+			"message": "Something went wrong!",
+		})
+		return
+	}
+
+	c.JSON(http.StatusAccepted, gin.H{
+		"error":   false,
+		"message": "Post deleted successfully!",
 	})
 }
